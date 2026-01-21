@@ -80,6 +80,13 @@ const Sidebar = () => {
           </li>
 
           <li className="nav-item p-1">
+            <Link to="/faculty/dashboard/manage-marks" className="nav-link text-black">
+              <i className="bi bi-journal-check me-2 fs-5"></i>
+              <span className="fs-5">Manage Marks</span>
+            </Link>
+          </li>
+
+          <li className="nav-item p-1">
             <Link to="/faculty/dashboard/view-students" className="nav-link text-black">
               <i className="bi bi-person-vcard me-2 fs-5"></i>
               <span className="fs-5">View Students</span>
