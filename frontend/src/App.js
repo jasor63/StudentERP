@@ -18,12 +18,17 @@ import ManageAttendance from './components/Faculty/ManageAttendance';
 import ViewStudent from './components/Faculty/ViewStudent';
 import FacultyManageProfile from './components/Faculty/ManageProfile';
 import FacultyHelpAndSupport from './components/FacultyHelpAndSupport';
+import ManageMarks from './components/Faculty/ManageMarks';
+
+import ManageSubjects from './components/Admin/ManageSubjects';
 
 import StudentDashboard from './components/Student/StudentDashboard';
 import StudentManageProfile from './components/Student/ManageProfile';
 import ViewAttendance from './components/Student/ViewAttendance';
 import ViewTimetable from './components/Student/ViewTimetable';
 import StudentHelpAndSupport from './components/StudentHelpAndSupport';
+import ViewMarks from './components/Student/ViewMarks';
+import ViewSubjects from './components/Student/ViewSubjects';
 
 import Unauthorised from './components/Unauthorised';
 
@@ -105,6 +110,10 @@ function App() {
           element={<PrivateRoute element={<UploadTimetable />} />}
         />
         <Route
+          path='/admin/dashboard/manage-subjects'
+          element={<PrivateRoute element={<ManageSubjects />} />}
+        />
+        <Route
           path='/admin/help-support'
           element={<PrivateRoute element={<AdminHelpAndSupport />} />}
         />
@@ -127,6 +136,10 @@ function App() {
           element={<PrivateRoute element={<FacultyManageProfile />} />}
         />
         <Route
+          path='/faculty/dashboard/manage-marks'
+          element={<PrivateRoute element={<ManageMarks />} />}
+        />
+        <Route
           path='/faculty/help-support'
           element={<PrivateRoute element={<FacultyHelpAndSupport />} />}
         />
@@ -147,6 +160,14 @@ function App() {
         <Route
           path="/student/dashboard/view-timetable"
           element={<PrivateRoute element={<ViewTimetable />} />}
+        />
+        <Route
+          path="/student/dashboard/view-marks"
+          element={<PrivateRoute element={<ViewMarks />} />}
+        />
+        <Route
+          path="/student/dashboard/view-subjects"
+          element={<PrivateRoute element={<ViewSubjects />} />}
         />
         <Route
           path="/student/help-support"

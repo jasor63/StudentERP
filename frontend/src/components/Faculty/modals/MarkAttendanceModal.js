@@ -7,10 +7,9 @@ import Col from 'react-bootstrap/Col';
 import Row from 'react-bootstrap/Row';
 import Spinner from 'react-bootstrap/Spinner';
 
-function MarkAttendanceModal({ show, handleClose, students, totalAttendance, setMessage, handleShowToast }) {
+function MarkAttendanceModal({ show, handleClose, students, selectedDate, selectedCourse, setMessage, handleShowToast }) {
     const [loading, setLoading] = useState(false);
     const [searchEmail, setSearchEmail] = useState('');
-    const [filteredStudents, setFilteredStudents] = useState([]);
     const [selectedStudents, setSelectedStudents] = useState([]);
 
     const handleSearchChange = (e) => {
@@ -27,74 +26,47 @@ function MarkAttendanceModal({ show, handleClose, students, totalAttendance, set
         });
     };
 
-    const updateTotalAttendance = async () => {
-        try {
-            const response = await fetch("http://localhost:5173/api/students/total-attendance", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    attendance: totalAttendance + 1,
-                }),
-            });
-            if (!response.ok) {
-                setMessage("Failed to mark attendance");
-                handleShowToast();
-                handleClose();
-                return;
-            }
-        } catch (error) {
-            console.error(error);
-        }
-    }
-
     const handleSubmit = async (event) => {
         event.preventDefault();
         setLoading(true);
         try {
+            const updates = students.map(student => ({
+                studentId: student._id,
+                status: selectedStudents.includes(student._id) ? 'Present' : 'Absent'
+            }));
+
             const response = await fetch(`http://localhost:5173/api/students/update-attendance`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(
-                    selectedStudents.map(studentId => ({
-                        studentId,
-                        attendanceCount: 1,
-                    }))
-                ),
+                body: JSON.stringify({
+                    updates,
+                    date: selectedDate,
+                    courseId: selectedCourse
+                }),
             });
 
             if (!response.ok) {
                 throw new Error('Failed to update attendance');
             }
 
-            if (!response.ok) {
-                setMessage("Failed to mark attendance");
-                handleShowToast();
-                handleClose();
-            } else {
-                setMessage("Attendance marked successfully");
-                updateTotalAttendance();
-                handleShowToast();
-                setLoading(false);
-                setSelectedStudents([]);
-                handleClose();
-            }
+            setMessage("Attendance marked successfully");
+            handleShowToast();
+            setLoading(false);
+            setSelectedStudents([]);
+            handleClose();
         } catch (error) {
             console.error(error);
+            setMessage("Failed to mark attendance");
+            handleShowToast();
             setLoading(false);
         }
     };
 
 
-    useEffect(() => {
-        const filtered = students.filter(student => student.email.includes(searchEmail));
-        setFilteredStudents(filtered.map(student => ({
-            ...student,
-        })));
-    }, [searchEmail, students]);
+
+
 
     return (
         <Modal show={show} onHide={handleClose}>
@@ -120,7 +92,7 @@ function MarkAttendanceModal({ show, handleClose, students, totalAttendance, set
                             </Form.Group>
                         </Form>
                         <div className="mt-3 border border-2 rounded-2 scrollable-container" style={{ height: "22rem", overflowY: 'auto' }}>
-                            {filteredStudents
+                            {students
                                 .sort((a, b) => a.email.localeCompare(b.email))
                                 .map(student => (
                                     <div
@@ -147,6 +119,7 @@ function MarkAttendanceModal({ show, handleClose, students, totalAttendance, set
                                         </Row>
                                     </div>
                                 ))}
+
                         </div>
                     </div >
                 </Modal.Body>

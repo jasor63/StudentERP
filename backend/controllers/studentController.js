@@ -73,20 +73,20 @@ exports.deleteStudent = async (req, res) => {
 
 exports.updateAttendance = async (req, res) => {
   try {
-    const updates = req.body;
+    const { updates, date, courseId } = req.body; // Expecting { updates: [{studentId, status}], date, courseId }
     if (!Array.isArray(updates)) {
       throw new Error('Updates must be an array');
     }
 
-    const bulkOperations = updates.map(update => ({
-      updateOne: {
-        filter: { _id: update.studentId },
-        update: { $inc: { attendance: update.attendanceCount } }
-      }
+    const attendanceRecords = updates.map(update => ({
+      student: update.studentId,
+      course: courseId,
+      date: new Date(date),
+      status: update.status || 'Present'
     }));
 
-    await Student.bulkWrite(bulkOperations);
-    res.json({ message: "Attendance updated successfully" });
+    await Attendance.insertMany(attendanceRecords);
+    res.json({ message: "Attendance marked successfully" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -94,18 +94,40 @@ exports.updateAttendance = async (req, res) => {
 
 exports.totalAttendance = async (req, res) => {
   try {
-    const updatedAttendance = await Attendance.findByIdAndUpdate(
-      "662b3c2219a7f45154c025bb",
-      req.body,
-      { new: true }
-    );
-    if (!updatedAttendance) {
-      return res.status(404).json({ message: "Attendance not found" });
-    }
+    const { courseId, studentId } = req.body;
+    let query = {};
+    if (courseId) query.course = courseId;
+    if (studentId) query.student = studentId;
+
+    // Total lectures conducted for a course (unique dates in Attendance records for that course)
+    // For simplicity, we can count total records if we assume one per lecture per student
+    // But a better way is to count distinct dates for a course
+    const totalLectures = await Attendance.distinct('date', { course: courseId });
+    
+    // Total attended by student
+    const totalAttended = await Attendance.countDocuments({ 
+        student: studentId, 
+        course: courseId, 
+        status: 'Present' 
+    });
+
     res.json({
-      updatedAttendance: updatedAttendance
+      totalLectures: totalLectures.length,
+      totalAttended: totalAttended
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
-}
+};
+
+exports.getAttendanceHistory = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const history = await Attendance.find({ student: id })
+      .populate('course')
+      .sort({ date: -1 });
+    res.json(history);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};

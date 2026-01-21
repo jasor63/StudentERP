@@ -19,6 +19,8 @@ const adminRoutes = require('./routes/adminRoutes');
 const noticeRoutes = require('./routes/noticeRoutes');
 const authRoutes = require('./routes/authRoutes');
 const timetableRoutes = require('./routes/timetableRoutes');
+const subjectRoutes = require('./routes/subjectRoutes');
+const markRoutes = require('./routes/markRoutes');
 
 // Mounting routes
 app.use('/api/students', studentRoutes);
@@ -28,6 +30,8 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/notice', noticeRoutes);
 app.use('/api/login', authRoutes);
 app.use('/api/timetable', timetableRoutes);
+app.use('/api/subjects', subjectRoutes);
+app.use('/api/marks', markRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

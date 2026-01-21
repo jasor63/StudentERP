@@ -80,6 +80,20 @@ const Sidebar = () => {
                     </li>
 
                     <li className="nav-item p-1">
+                        <Link to="/student/dashboard/view-marks" className="nav-link text-black">
+                            <i className="bi bi-journal-text me-2 fs-5"></i>
+                            <span className="fs-5">View Marks</span>
+                        </Link>
+                    </li>
+
+                    <li className="nav-item p-1">
+                        <Link to="/student/dashboard/view-subjects" className="nav-link text-black">
+                            <i className="bi bi-journal-bookmark me-2 fs-5"></i>
+                            <span className="fs-5">View Subjects</span>
+                        </Link>
+                    </li>
+
+                    <li className="nav-item p-1">
                         <Link to="/student/dashboard/view-timetable" className="nav-link text-black">
                             <i className="bi bi-calendar3 me-2 fs-5"></i>
                             <span className="fs-5">View Timetable</span>
