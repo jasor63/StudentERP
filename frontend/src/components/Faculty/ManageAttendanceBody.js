@@ -30,6 +30,9 @@ function ManageAttendanceBody() {
         setShowMarkAttendanceModal(false);
         setModalUpdated(!modalUpdated);
     };
+    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+    const [selectedCourse, setSelectedCourse] = useState('');
+
     const handleSearchChange = (e) => {
         setSearchEmail(e.target.value);
     };
@@ -48,25 +51,6 @@ function ManageAttendanceBody() {
             }
         };
         fetchStudents();
-
-        const fetchTotalAttendance = async () => {
-            try {
-                const response = await fetch("http://localhost:5173/api/students/total-attendance", {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                });
-                if (!response.ok) {
-                    throw new Error('Failed to fetch Total Attendance');
-                }
-                const data = await response.json();
-                setTotalAttendance(data.updatedAttendance.attendance);
-            } catch (error) {
-                console.error(error);
-            }
-        };
-        fetchTotalAttendance();
     }, [modalUpdated]);
 
     useEffect(() => {
@@ -78,6 +62,7 @@ function ManageAttendanceBody() {
                 }
                 const data = await response.json();
                 setCourses(data);
+                if (data.length > 0) setSelectedCourse(data[0]._id);
             } catch (error) {
                 console.error(error);
             }
@@ -86,16 +71,19 @@ function ManageAttendanceBody() {
     }, []);
 
     useEffect(() => {
-        const filtered = students.filter(student => student.email.includes(searchEmail));
+        const filtered = students.filter(student => 
+            student.email.includes(searchEmail) && 
+            (selectedCourse ? student.course._id === selectedCourse : true)
+        );
         setFilteredStudents(filtered.map(student => ({
             ...student,
-            courseName: courses.find(course => course._id === student.course)?.name
+            courseName: courses.find(course => course._id === (student.course._id || student.course))?.name
         })));
-    }, [searchEmail, students, courses]);
+    }, [searchEmail, students, courses, selectedCourse]);
 
-    const calculateAttendancePercentage = (attendanceCount) => {
-        if (totalAttendance === 0) return 0;
-        return ((attendanceCount / totalAttendance) * 100).toFixed(2);
+    const calculateAttendancePercentage = (student) => {
+        // This will be replaced or simplified since we now have historical data
+        return "N/A"; 
     };
 
     return (
@@ -126,8 +114,6 @@ function ManageAttendanceBody() {
                     <Card
                         className="m-3 mx-5 p-3 shadow align-items-center pe-auto"
                         style={{ width: "18rem" }}
-                        onMouseEnter={(e) => e.target.classList.add('shadow-lg')}
-                        onMouseLeave={(e) => e.target.classList.remove('shadow-lg')}
                     >
                         <Card.Img
                             className="p-0"
@@ -137,8 +123,8 @@ function ManageAttendanceBody() {
                         />
                         <Card.Body className="d-flex align-items-center">
                             <div>
-                                <Card.Title>Total Lectures: {totalAttendance}</Card.Title>
-                                <Card.Text></Card.Text>
+                                <Card.Title>History & Reports</Card.Title>
+                                <Card.Text>View detailed logs</Card.Text>
                             </div>
                         </Card.Body>
                     </Card>
@@ -146,20 +132,44 @@ function ManageAttendanceBody() {
 
                 <div className="mt-4 mx-5 p-4 pt-3 border border-3 border-success rounded-4 shadow" style={{ width: "42rem" }}>
                     <Form>
-                        <Form.Group controlId="searchEmail">
+                        <Row>
+                            <Col md={6}>
+                                <Form.Group controlId="selectCourse">
+                                    <Form.Label>Select Course</Form.Label>
+                                    <Form.Select 
+                                        value={selectedCourse} 
+                                        onChange={(e) => setSelectedCourse(e.target.value)}
+                                    >
+                                        {courses.map(course => (
+                                            <option key={course._id} value={course._id}>{course.name}</option>
+                                        ))}
+                                    </Form.Select>
+                                </Form.Group>
+                            </Col>
+                            <Col md={6}>
+                                <Form.Group controlId="selectDate">
+                                    <Form.Label>Select Date</Form.Label>
+                                    <Form.Control 
+                                        type="date" 
+                                        value={selectedDate} 
+                                        onChange={(e) => setSelectedDate(e.target.value)}
+                                    />
+                                </Form.Group>
+                            </Col>
+                        </Row>
+                        <Form.Group controlId="searchEmail" className="mt-3">
                             <Form.Label>Search by Email</Form.Label>
                             <div className="input-group">
                                 <Form.Control
-                                    className=''
                                     type="email"
                                     placeholder="Enter student's email"
                                     value={searchEmail}
                                     onChange={handleSearchChange}
                                 />
-                                <button className="btn btn-success" type="button">Search</button>
                             </div>
                         </Form.Group>
                     </Form>
+
                     <div className='mt-3 border border-2 rounded-2 '>
                         <div className="d-flex w-100">
                             <Col xs={3} className="p-3 fw-bold">Name</Col>
@@ -197,7 +207,16 @@ function ManageAttendanceBody() {
                         </div>
                     </div >
                 </div>
-                <MarkAttendanceModal show={showMarkAttendanceModal} handleClose={handleCloseMarkAttendanceModal} students={students} totalAttendance={totalAttendance} setMessage={setMessage} handleShowToast={handleShowToast} />
+                <MarkAttendanceModal 
+                    show={showMarkAttendanceModal} 
+                    handleClose={handleCloseMarkAttendanceModal} 
+                    students={filteredStudents} 
+                    selectedDate={selectedDate} 
+                    selectedCourse={selectedCourse} 
+                    setMessage={setMessage} 
+                    handleShowToast={handleShowToast} 
+                />
+
                 <NotificationToast show={showToast} setShow={setShowToast} message={message} />
             </div>
         </div>
