@@ -19,10 +19,10 @@ function ManageMarksBody() {
 
     useEffect(() => {
         if (selectedCourse) {
-            fetchSubjects(selectedCourse);
+            fetchSubjects(selectedCourse, semester);
             fetchStudents(selectedCourse);
         }
-    }, [selectedCourse]);
+    }, [selectedCourse, semester]);
 
     const fetchCourses = async () => {
         try {
@@ -35,15 +35,22 @@ function ManageMarksBody() {
         }
     };
 
-    const fetchSubjects = async (courseId) => {
+    const fetchSubjects = async (courseId, sem) => {
         try {
-            const response = await fetch(`http://localhost:5173/api/subjects/course/${courseId}`);
+            const response = await fetch(`http://localhost:5173/api/marks/assigned-subjects/${courseId}/${sem}`);
             const data = await response.json();
-            setSubjects(data);
-            if (data.length > 0) setSelectedSubject(data[0]._id);
-            else setSelectedSubject('');
+            if (Array.isArray(data)) {
+                setSubjects(data);
+                if (data.length > 0) setSelectedSubject(data[0]._id);
+                else setSelectedSubject('');
+            } else {
+                setSubjects([]);
+                setSelectedSubject('');
+            }
         } catch (error) {
             console.error('Error fetching subjects:', error);
+            setSubjects([]);
+            setSelectedSubject('');
         }
     };
 
@@ -135,8 +142,12 @@ function ManageMarksBody() {
                         <Col md={4}>
                             <Form.Group>
                                 <Form.Label>Subject</Form.Label>
-                                <Form.Select value={selectedSubject} onChange={(e) => setSelectedSubject(e.target.value)}>
-                                    <option value="">Select Subject</option>
+                                <Form.Select 
+                                    value={selectedSubject} 
+                                    onChange={(e) => setSelectedSubject(e.target.value)}
+                                    disabled={subjects.length === 0}
+                                >
+                                    <option value="">{subjects.length > 0 ? "Select Subject" : "No subjects assigned to this sem"}</option>
                                     {subjects.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
                                 </Form.Select>
                             </Form.Group>
