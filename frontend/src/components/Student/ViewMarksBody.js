@@ -65,8 +65,14 @@ function ViewMarksBody() {
                         <tr>
                             <th>Semester</th>
                             <th>Subject</th>
-                            <th>Assigned Faculty</th>
-                            <th>Marks Obtained</th>
+                            <th>CIA 1</th>
+                            <th>CIA 2</th>
+                            <th>CIA 3</th>
+                            <th>Int 1</th>
+                            <th>Int 2</th>
+                            <th>Att</th>
+                            <th>Lib</th>
+                            <th>Total</th>
                             <th>Status</th>
                         </tr>
                     </thead>
@@ -74,9 +80,15 @@ function ViewMarksBody() {
                         {filteredMarks.length > 0 ? (
                             filteredMarks.map((m, index) => (
                                 <tr key={index}>
-                                    <td><Badge bg="secondary">Semester {m.semester}</Badge></td>
+                                    <td><Badge bg="secondary">Sem {m.semester}</Badge></td>
                                     <td className="text-start ps-4">{m.subject.name}</td>
-                                    <td>{m.faculty ? m.faculty.name : <span className="text-muted">N/A</span>}</td>
+                                    <td>{m.cia1 || 0}</td>
+                                    <td>{m.cia2 || 0}</td>
+                                    <td>{m.cia3 || 0}</td>
+                                    <td>{m.internal1 || 0}</td>
+                                    <td>{m.internal2 || 0}</td>
+                                    <td>{m.attendance || 0}</td>
+                                    <td>{m.library || 0}</td>
                                     <td><span className="fw-bold">{m.marks}</span> / 100</td>
                                     <td>
                                         {m.marks >= 40 ? (
@@ -89,7 +101,7 @@ function ViewMarksBody() {
                             ))
                         ) : (
                             <tr>
-                                <td colSpan="4" className="text-muted py-4">No mark records found.</td>
+                                <td colSpan="11" className="text-muted py-4">No mark records found.</td>
                             </tr>
                         )}
                     </tbody>

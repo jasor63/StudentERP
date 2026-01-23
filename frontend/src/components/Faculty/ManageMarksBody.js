@@ -10,8 +10,20 @@ function ManageMarksBody() {
     const [selectedSubject, setSelectedSubject] = useState('');
     const [semester, setSemester] = useState(1);
     const [marksData, setMarksData] = useState({}); // { studentId: marks }
+    const [assessmentType, setAssessmentType] = useState('marks');
     const [message, setMessage] = useState('');
     const [showToast, setShowToast] = useState(false);
+
+    const assessments = [
+        { value: 'marks', label: 'Total Marks (Manual)' },
+        { value: 'cia1', label: 'CIA 1' },
+        { value: 'cia2', label: 'CIA 2' },
+        { value: 'cia3', label: 'CIA 3' },
+        { value: 'internal1', label: 'Internal 1' },
+        { value: 'internal2', label: 'Internal 2' },
+        { value: 'attendance', label: 'Attendance' },
+        { value: 'library', label: 'Library' },
+    ];
 
     useEffect(() => {
         fetchCourses();
@@ -63,20 +75,23 @@ function ManageMarksBody() {
             
             // Re-initialize marksData when students change, but maybe we should fetch existing marks too
             if (selectedSubject) {
-                fetchExistingMarks(selectedSubject, semester);
+                fetchExistingMarks(selectedSubject, semester, assessmentType);
             }
         } catch (error) {
             console.error('Error fetching students:', error);
         }
     };
 
-    const fetchExistingMarks = async (subjectId, sem) => {
+    const [fullMarksData, setFullMarksData] = useState([]);
+
+    const fetchExistingMarks = async (subjectId, sem, type) => {
         try {
             const response = await fetch(`http://localhost:5173/api/marks/subject/${subjectId}/${sem}`);
             const data = await response.json();
+            setFullMarksData(data);
             const existingMarks = {};
             data.forEach(m => {
-                existingMarks[m.student._id] = m.marks;
+                existingMarks[m.student._id] = m[type] || 0;
             });
             setMarksData(existingMarks);
         } catch (error) {
@@ -86,9 +101,9 @@ function ManageMarksBody() {
 
     useEffect(() => {
         if (selectedSubject && semester) {
-            fetchExistingMarks(selectedSubject, semester);
+            fetchExistingMarks(selectedSubject, semester, assessmentType);
         }
-    }, [selectedSubject, semester]);
+    }, [selectedSubject, semester, assessmentType]);
 
     const handleMarkChange = (studentId, value) => {
         setMarksData(prev => ({
@@ -110,7 +125,7 @@ function ManageMarksBody() {
             const response = await fetch("http://localhost:5173/api/marks/enter", {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ marksData: formattedData })
+                body: JSON.stringify({ marksData: formattedData, assessmentType: assessmentType })
             });
             if (response.ok) {
                 setMessage("Marks updated successfully!");
@@ -131,7 +146,7 @@ function ManageMarksBody() {
             <Card className="p-4 shadow border-0 rounded-4">
                 <Form onSubmit={handleSubmit}>
                     <Row className="mb-3">
-                        <Col md={4}>
+                        <Col md={3}>
                             <Form.Group>
                                 <Form.Label>Course</Form.Label>
                                 <Form.Select value={selectedCourse} onChange={(e) => setSelectedCourse(e.target.value)}>
@@ -139,7 +154,7 @@ function ManageMarksBody() {
                                 </Form.Select>
                             </Form.Group>
                         </Col>
-                        <Col md={4}>
+                        <Col md={3}>
                             <Form.Group>
                                 <Form.Label>Subject</Form.Label>
                                 <Form.Select 
@@ -147,12 +162,12 @@ function ManageMarksBody() {
                                     onChange={(e) => setSelectedSubject(e.target.value)}
                                     disabled={subjects.length === 0}
                                 >
-                                    <option value="">{subjects.length > 0 ? "Select Subject" : "No subjects assigned to this sem"}</option>
+                                    <option value="">{subjects.length > 0 ? "Select Subject" : "No subjects assigned"}</option>
                                     {subjects.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
                                 </Form.Select>
                             </Form.Group>
                         </Col>
-                        <Col md={4}>
+                        <Col md={3}>
                             <Form.Group>
                                 <Form.Label>Semester</Form.Label>
                                 <Form.Control 
@@ -162,6 +177,14 @@ function ManageMarksBody() {
                                     value={semester} 
                                     onChange={(e) => setSemester(e.target.value)} 
                                 />
+                            </Form.Group>
+                        </Col>
+                        <Col md={3}>
+                            <Form.Group>
+                                <Form.Label>Assessment Type</Form.Label>
+                                <Form.Select value={assessmentType} onChange={(e) => setAssessmentType(e.target.value)}>
+                                    {assessments.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
+                                </Form.Select>
                             </Form.Group>
                         </Col>
                     </Row>
@@ -203,6 +226,45 @@ function ManageMarksBody() {
                     {!selectedSubject && <p className="text-center text-muted mt-4">Please select a subject to enter marks.</p>}
                 </Form>
             </Card>
+
+            {selectedSubject && fullMarksData.length > 0 && (
+                <Card className="p-4 shadow border-0 rounded-4 mt-5 mb-5">
+                    <h5 className="mb-4 text-primary">Class Marks Summary</h5>
+                    <Table hover responsive striped bordered className="text-center align-middle">
+                        <thead className="table-dark">
+                            <tr>
+                                <th>Student Name</th>
+                                <th>CIA 1</th>
+                                <th>CIA 2</th>
+                                <th>CIA 3</th>
+                                <th>Int 1</th>
+                                <th>Int 2</th>
+                                <th>Att</th>
+                                <th>Lib</th>
+                                <th>Total (/100)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {students.map(student => {
+                                const m = fullMarksData.find(md => md.student._id === student._id);
+                                return (
+                                    <tr key={student._id}>
+                                        <td className="text-start">{student.name}</td>
+                                        <td>{m?.cia1 || 0}</td>
+                                        <td>{m?.cia2 || 0}</td>
+                                        <td>{m?.cia3 || 0}</td>
+                                        <td>{m?.internal1 || 0}</td>
+                                        <td>{m?.internal2 || 0}</td>
+                                        <td>{m?.attendance || 0}</td>
+                                        <td>{m?.library || 0}</td>
+                                        <td className="fw-bold text-success">{m?.marks || 0}</td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </Table>
+                </Card>
+            )}
             <NotificationToast show={showToast} setShow={setShowToast} message={message} />
         </div>
     );

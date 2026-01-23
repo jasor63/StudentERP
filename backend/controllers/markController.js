@@ -5,17 +5,45 @@ const Subject = require("../models/Subject");
 
 exports.enterMarks = async (req, res) => {
     try {
-        const { marksData } = req.body; // Expecting [{ student, subject, marks, semester }]
+        const { marksData, assessmentType } = req.body; // Expecting [{ student, subject, marks, semester }], assessmentType
         if (!Array.isArray(marksData)) {
             throw new Error('marksData must be an array');
         }
 
         const results = await Promise.all(marksData.map(async (data) => {
-            return await Mark.findOneAndUpdate(
-                { student: data.student, subject: data.subject, semester: data.semester },
-                { marks: data.marks, faculty: data.faculty },
-                { upsert: true, new: true }
-            );
+            // Find existing record to get other assessment marks
+            let markRecord = await Mark.findOne({ student: data.student, subject: data.subject, semester: data.semester });
+            
+            if (!markRecord) {
+                markRecord = new Mark({
+                    student: data.student,
+                    subject: data.subject,
+                    semester: data.semester,
+                    faculty: data.faculty
+                });
+            }
+
+            // Update the specific assessment field
+            if (assessmentType && assessmentType !== 'marks') {
+                markRecord[assessmentType] = data.marks;
+            } else {
+                markRecord.marks = data.marks;
+            }
+
+            // Calculate total marks (if not manually entering 'marks')
+            if (assessmentType && assessmentType !== 'marks') {
+                markRecord.marks = 
+                    (markRecord.cia1 || 0) + 
+                    (markRecord.cia2 || 0) + 
+                    (markRecord.cia3 || 0) + 
+                    (markRecord.internal1 || 0) + 
+                    (markRecord.internal2 || 0) + 
+                    (markRecord.attendance || 0) + 
+                    (markRecord.library || 0);
+            }
+
+            markRecord.faculty = data.faculty;
+            return await markRecord.save();
         }));
 
         res.json({ message: "Marks entered/updated successfully", results });
