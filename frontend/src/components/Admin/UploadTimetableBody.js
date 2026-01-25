@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 // eslint-disable-next-line
-import { Col, Form, Button, ListGroup, Card } from 'react-bootstrap';
+import { Col, Form, Button, ListGroup, Card, Row } from 'react-bootstrap';
 import NotificationToast from '../NotificationToast';
 
 function UploadTimetableBody() {
     const [students, setStudents] = useState([]);
+    const [courses, setCourses] = useState([]);
+    const [selectedCourse, setSelectedCourse] = useState('All');
     const [selectedStudents, setSelectedStudents] = useState([]);
     const [file, setFile] = useState(null);
     const [title, setTitle] = useState('');
@@ -26,7 +28,21 @@ function UploadTimetableBody() {
                 console.error(error);
             }
         };
+
+        const fetchCourses = async () => {
+            try {
+                const response = await fetch("http://localhost:5173/api/courses");
+                if (response.ok) {
+                    const data = await response.json();
+                    setCourses(data);
+                }
+            } catch (error) {
+                console.error("Error fetching courses:", error);
+            }
+        };
+
         fetchStudents();
+        fetchCourses();
         fetchTimetableHistory();
     }, []);
 
@@ -120,10 +136,12 @@ function UploadTimetableBody() {
         }
     };
 
-    const filteredStudents = students.filter(student => 
-        student.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        student.email.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredStudents = students.filter(student => {
+        const matchesSearch = student.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                              student.email.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesCourse = selectedCourse === 'All' || (student.course && (student.course._id === selectedCourse || student.course === selectedCourse));
+        return matchesSearch && matchesCourse;
+    });
 
     return (
         <div className="mx-5">
@@ -142,14 +160,28 @@ function UploadTimetableBody() {
                     </Form.Group>
 
                     <Form.Group className="mb-4">
-                        <Form.Label className="fw-bold">2. Select Students</Form.Label>
-                        <Form.Control 
-                            type="text" 
-                            placeholder="Search students..." 
-                            className="mb-2"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
+                        <Form.Label className="fw-bold">2. Select Class & Students</Form.Label>
+                        <Row className="mb-2">
+                            <Col md={6}>
+                                <Form.Select 
+                                    value={selectedCourse} 
+                                    onChange={(e) => setSelectedCourse(e.target.value)}
+                                >
+                                    <option value="All">All Classes</option>
+                                    {courses.map(course => (
+                                        <option key={course._id} value={course._id}>{course.name}</option>
+                                    ))}
+                                </Form.Select>
+                            </Col>
+                            <Col md={6}>
+                                <Form.Control 
+                                    type="text" 
+                                    placeholder="Search by name or email..." 
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
+                            </Col>
+                        </Row>
                         <div className="d-flex justify-content-between align-items-center mb-2">
                             <span className="text-muted small">{selectedStudents.length} students selected</span>
                             <Button variant="outline-success" size="sm" onClick={handleSelectAll}>
